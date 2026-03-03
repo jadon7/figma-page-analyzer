@@ -1,17 +1,24 @@
 {
   "name": "figma-page-analyzer",
-  "version": "1.0.0",
-  "description": "Analyze and statistics all information on the current Figma page",
+  "version": "2.0.1",
+  "description": "Analyze and statistics all information on the current Figma page with element inspector",
   "main": "code.js",
   "scripts": {
     "build": "tsc",
-    "watch": "tsc --watch"
+    "watch": "tsc --watch",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:verbose": "jest --verbose"
   },
-  "keywords": ["figma", "plugin", "analyzer", "statistics"],
+  "keywords": ["figma", "plugin", "analyzer", "statistics", "inspector"],
   "author": "",
   "license": "MIT",
   "devDependencies": {
     "@figma/plugin-typings": "^1.90.0",
+    "@types/jest": "^29.5.11",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.1",
     "typescript": "^5.3.3"
   }
 }

@@ -15,14 +15,57 @@
       font-size: 12px;
       color: #333;
       background: #fff;
+    }
+
+    .header {
       padding: 16px;
+      border-bottom: 1px solid #e5e5e5;
     }
 
     h1 {
       font-size: 18px;
       font-weight: 600;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
       color: #000;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 4px;
+    }
+
+    .tab {
+      padding: 8px 16px;
+      background: #f0f0f0;
+      border: none;
+      border-radius: 6px 6px 0 0;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .tab:hover {
+      background: #e5e5e5;
+    }
+
+    .tab.active {
+      background: #18a0fb;
+      color: white;
+    }
+
+    .content {
+      padding: 16px;
+      max-height: calc(700px - 100px);
+      overflow-y: auto;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
     }
 
     h2 {
@@ -33,6 +76,10 @@
       color: #000;
       border-bottom: 1px solid #e5e5e5;
       padding-bottom: 6px;
+    }
+
+    h2:first-child {
+      margin-top: 0;
     }
 
     .button-group {
@@ -72,6 +119,12 @@
       cursor: not-allowed;
     }
 
+    button.small {
+      flex: none;
+      padding: 6px 12px;
+      font-size: 11px;
+    }
+
     .stats-container {
       display: none;
     }
@@ -107,6 +160,9 @@
     .stat-value {
       font-weight: 600;
       color: #000;
+      word-break: break-word;
+      text-align: right;
+      max-width: 60%;
     }
 
     .color-grid {
@@ -138,27 +194,6 @@
       font-size: 10px;
       white-space: nowrap;
       z-index: 10;
-    }
-
-    .text-list {
-      max-height: 200px;
-      overflow-y: auto;
-      background: #fff;
-      border: 1px solid #e5e5e5;
-      border-radius: 4px;
-      padding: 8px;
-      margin-top: 8px;
-    }
-
-    .text-item {
-      padding: 4px 0;
-      border-bottom: 1px solid #f0f0f0;
-      font-size: 11px;
-      color: #666;
-    }
-
-    .text-item:last-child {
-      border-bottom: none;
     }
 
     .loading {
@@ -215,123 +250,296 @@
       max-height: 300px;
       overflow-y: auto;
     }
+
+    .inspector-empty {
+      text-align: center;
+      padding: 40px 20px;
+      color: #999;
+      background: #f9f9f9;
+      border-radius: 6px;
+      border: 2px dashed #e5e5e5;
+    }
+
+    .inspector-empty-icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+    }
+
+    .node-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 16px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+    }
+
+    .node-name {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .node-type {
+      font-size: 11px;
+      opacity: 0.9;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .property-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .property-section {
+      background: #f9f9f9;
+      border: 1px solid #e5e5e5;
+      border-radius: 6px;
+      padding: 12px;
+    }
+
+    .property-title {
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      color: #666;
+      margin-bottom: 8px;
+      letter-spacing: 0.5px;
+    }
+
+    .json-viewer {
+      background: #2d2d2d;
+      color: #f8f8f2;
+      padding: 12px;
+      border-radius: 6px;
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 11px;
+      max-height: 400px;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .copy-notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #18a0fb;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 6px;
+      font-weight: 500;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      opacity: 0;
+      transform: translateY(-10px);
+      transition: all 0.3s;
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    .copy-notification.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .multiple-selection {
+      background: #fff3cd;
+      border: 1px solid #ffc107;
+      padding: 16px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+    }
+
+    .multiple-selection-title {
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #856404;
+    }
+
+    .multiple-selection-list {
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .multiple-selection-item {
+      padding: 6px;
+      background: white;
+      margin: 4px 0;
+      border-radius: 4px;
+      font-size: 11px;
+    }
   </style>
 </head>
 <body>
-  <h1>📊 Page Analyzer</h1>
-
-  <div class="button-group">
-    <button id="analyzeBtn">Analyze Page</button>
-    <button id="exportBtn" class="secondary" disabled>Export JSON</button>
-  </div>
-
-  <div id="loading" class="loading" style="display: none;">
-    Analyzing page...
-  </div>
-
-  <div id="error" class="error" style="display: none;"></div>
-
-  <div id="statsContainer" class="stats-container">
-    <div id="pageName" class="page-name"></div>
-
-    <h2>📦 Overview</h2>
-    <div class="stat-group">
-      <div class="stat-row">
-        <span class="stat-label">Total Nodes</span>
-        <span class="stat-value" id="totalNodes">0</span>
-      </div>
-      <div class="stat-row">
-        <span class="stat-label">Max Hierarchy Depth</span>
-        <span class="stat-value" id="maxDepth">0</span>
-      </div>
-      <div class="stat-row">
-        <span class="stat-label">Avg Hierarchy Depth</span>
-        <span class="stat-value" id="avgDepth">0</span>
-      </div>
-    </div>
-
-    <h2>🧩 Nodes by Type</h2>
-    <div class="stat-group scrollable">
-      <div id="nodeTypes" class="node-type-list"></div>
-    </div>
-
-    <h2>⚛️ Components</h2>
-    <div class="stat-group">
-      <div class="stat-row">
-        <span class="stat-label">Components</span>
-        <span class="stat-value" id="components">0</span>
-      </div>
-      <div class="stat-row">
-        <span class="stat-label">Component Sets</span>
-        <span class="stat-value" id="componentSets">0</span>
-      </div>
-      <div class="stat-row">
-        <span class="stat-label">Instances</span>
-        <span class="stat-value" id="instances">0</span>
-      </div>
-      <div class="stat-row">
-        <span class="stat-label">Unique Components</span>
-        <span class="stat-value" id="uniqueComponents">0</span>
-      </div>
-    </div>
-
-    <h2>🎨 Colors <span class="badge" id="colorCount">0</span></h2>
-    <div class="stat-group">
-      <div id="colorGrid" class="color-grid"></div>
-    </div>
-
-    <h2>✏️ Text</h2>
-    <div class="stat-group">
-      <div class="stat-row">
-        <span class="stat-label">Text Nodes</span>
-        <span class="stat-value" id="textNodes">0</span>
-      </div>
-      <div class="stat-row">
-        <span class="stat-label">Total Characters</span>
-        <span class="stat-value" id="totalChars">0</span>
-      </div>
-      <div class="stat-row">
-        <span class="stat-label">Unique Fonts</span>
-        <span class="stat-value" id="uniqueFonts">0</span>
-      </div>
-    </div>
-
-    <h2>🎭 Styles</h2>
-    <div class="stat-group">
-      <div class="stat-row">
-        <span class="stat-label">Text Styles</span>
-        <span class="stat-value" id="textStyles">0</span>
-      </div>
-      <div class="stat-row">
-        <span class="stat-label">Fill Styles</span>
-        <span class="stat-value" id="fillStyles">0</span>
-      </div>
-      <div class="stat-row">
-        <span class="stat-label">Stroke Styles</span>
-        <span class="stat-value" id="strokeStyles">0</span>
-      </div>
-      <div class="stat-row">
-        <span class="stat-label">Effect Styles</span>
-        <span class="stat-value" id="effectStyles">0</span>
-      </div>
-      <div class="stat-row">
-        <span class="stat-label">Total Styles</span>
-        <span class="stat-value" id="totalStyles">0</span>
-      </div>
-    </div>
-
-    <h2>📐 Dimensions</h2>
-    <div class="stat-group">
-      <div class="stat-row">
-        <span class="stat-label">Largest Node</span>
-        <span class="stat-value" id="largestNode">-</span>
-      </div>
+  <div class="header">
+    <h1>📊 Page Analyzer</h1>
+    <div class="tabs">
+      <button class="tab active" data-tab="page">Page Analysis</button>
+      <button class="tab" data-tab="inspector">Element Inspector</button>
     </div>
   </div>
+
+  <div class="content">
+    <!-- Page Analysis Tab -->
+    <div class="tab-content active" id="page-tab">
+      <div class="button-group">
+        <button id="analyzeBtn">Analyze Page</button>
+        <button id="exportBtn" class="secondary" disabled>Export JSON</button>
+      </div>
+
+      <div id="loading" class="loading" style="display: none;">
+        Analyzing page...
+      </div>
+
+      <div id="error" class="error" style="display: none;"></div>
+
+      <div id="statsContainer" class="stats-container">
+        <div id="pageName" class="page-name"></div>
+
+        <h2>📦 Overview</h2>
+        <div class="stat-group">
+          <div class="stat-row">
+            <span class="stat-label">Total Nodes</span>
+            <span class="stat-value" id="totalNodes">0</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Max Hierarchy Depth</span>
+            <span class="stat-value" id="maxDepth">0</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Avg Hierarchy Depth</span>
+            <span class="stat-value" id="avgDepth">0</span>
+          </div>
+        </div>
+
+        <h2>🧩 Nodes by Type</h2>
+        <div class="stat-group scrollable">
+          <div id="nodeTypes" class="node-type-list"></div>
+        </div>
+
+        <h2>⚛️ Components</h2>
+        <div class="stat-group">
+          <div class="stat-row">
+            <span class="stat-label">Components</span>
+            <span class="stat-value" id="components">0</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Component Sets</span>
+            <span class="stat-value" id="componentSets">0</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Instances</span>
+            <span class="stat-value" id="instances">0</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Unique Components</span>
+            <span class="stat-value" id="uniqueComponents">0</span>
+          </div>
+        </div>
+
+        <h2>🎨 Colors <span class="badge" id="colorCount">0</span></h2>
+        <div class="stat-group">
+          <div id="colorGrid" class="color-grid"></div>
+        </div>
+
+        <h2>✏️ Text</h2>
+        <div class="stat-group">
+          <div class="stat-row">
+            <span class="stat-label">Text Nodes</span>
+            <span class="stat-value" id="textNodes">0</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Total Characters</span>
+            <span class="stat-value" id="totalChars">0</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Unique Fonts</span>
+            <span class="stat-value" id="uniqueFonts">0</span>
+          </div>
+        </div>
+
+        <h2>🎭 Styles</h2>
+        <div class="stat-group">
+          <div class="stat-row">
+            <span class="stat-label">Text Styles</span>
+            <span class="stat-value" id="textStyles">0</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Fill Styles</span>
+            <span class="stat-value" id="fillStyles">0</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Stroke Styles</span>
+            <span class="stat-value" id="strokeStyles">0</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Effect Styles</span>
+            <span class="stat-value" id="effectStyles">0</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Total Styles</span>
+            <span class="stat-value" id="totalStyles">0</span>
+          </div>
+        </div>
+
+        <h2>📐 Dimensions</h2>
+        <div class="stat-group">
+          <div class="stat-row">
+            <span class="stat-label">Largest Node</span>
+            <span class="stat-value" id="largestNode">-</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Element Inspector Tab -->
+    <div class="tab-content" id="inspector-tab">
+      <div id="inspectorEmpty" class="inspector-empty">
+        <div class="inspector-empty-icon">🔍</div>
+        <div style="font-weight: 600; margin-bottom: 8px;">No Element Selected</div>
+        <div>Select an element in Figma to inspect its properties</div>
+      </div>
+
+      <div id="inspectorContent" style="display: none;">
+        <div id="nodeHeader" class="node-header">
+          <div class="node-name" id="nodeName"></div>
+          <div class="node-type" id="nodeType"></div>
+        </div>
+
+        <div class="button-group">
+          <button id="copyJsonBtn" class="secondary small">📋 Copy JSON</button>
+        </div>
+
+        <div id="propertyGrid" class="property-grid"></div>
+      </div>
+
+      <div id="multipleSelection" style="display: none;" class="multiple-selection">
+        <div class="multiple-selection-title">Multiple Elements Selected</div>
+        <div id="multipleSelectionList" class="multiple-selection-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="copyNotification" class="copy-notification">Copied to clipboard!</div>
 
   <script>
     let analysisData = null;
+    let selectedNodeData = null;
 
+    // Tab switching
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const tabName = tab.dataset.tab;
+
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+        tab.classList.add('active');
+        document.getElementById(`${tabName}-tab`).classList.add('active');
+      });
+    });
+
+    // Page Analysis
     const analyzeBtn = document.getElementById('analyzeBtn');
     const exportBtn = document.getElementById('exportBtn');
     const loading = document.getElementById('loading');
@@ -359,6 +567,27 @@
       }
     };
 
+    // Element Inspector
+    const copyJsonBtn = document.getElementById('copyJsonBtn');
+
+    copyJsonBtn.onclick = () => {
+      if (selectedNodeData) {
+        const jsonStr = JSON.stringify(selectedNodeData, null, 2);
+        navigator.clipboard.writeText(jsonStr).then(() => {
+          showCopyNotification();
+        });
+      }
+    };
+
+    function showCopyNotification() {
+      const notification = document.getElementById('copyNotification');
+      notification.classList.add('show');
+      setTimeout(() => {
+        notification.classList.remove('show');
+      }, 2000);
+    }
+
+    // Handle messages from plugin
     window.onmessage = (event) => {
       const msg = event.data.pluginMessage;
 
@@ -372,6 +601,8 @@
         loading.style.display = 'none';
         error.style.display = 'block';
         error.textContent = msg.message;
+      } else if (msg.type === 'selection-update') {
+        updateInspector(msg.data);
       }
     };
 
@@ -413,6 +644,7 @@
         swatch.setAttribute('data-color', color);
         swatch.onclick = () => {
           navigator.clipboard.writeText(color);
+          showCopyNotification();
         };
         colorGrid.appendChild(swatch);
       });
@@ -435,6 +667,193 @@
         document.getElementById('largestNode').textContent =
           `${node.name} (${Math.round(node.width)}×${Math.round(node.height)})`;
       }
+    }
+
+    function updateInspector(data) {
+      const inspectorEmpty = document.getElementById('inspectorEmpty');
+      const inspectorContent = document.getElementById('inspectorContent');
+      const multipleSelection = document.getElementById('multipleSelection');
+
+      if (!data) {
+        inspectorEmpty.style.display = 'block';
+        inspectorContent.style.display = 'none';
+        multipleSelection.style.display = 'none';
+        selectedNodeData = null;
+        return;
+      }
+
+      if (data.type === 'MULTIPLE_SELECTION') {
+        inspectorEmpty.style.display = 'none';
+        inspectorContent.style.display = 'none';
+        multipleSelection.style.display = 'block';
+
+        const list = document.getElementById('multipleSelectionList');
+        list.innerHTML = data.nodes.map(node => `
+          <div class="multiple-selection-item">
+            <strong>${node.name}</strong> - ${node.type}
+          </div>
+        `).join('');
+
+        selectedNodeData = data;
+        return;
+      }
+
+      inspectorEmpty.style.display = 'none';
+      inspectorContent.style.display = 'block';
+      multipleSelection.style.display = 'none';
+      selectedNodeData = data;
+
+      document.getElementById('nodeName').textContent = data.name;
+      document.getElementById('nodeType').textContent = data.type;
+
+      const propertyGrid = document.getElementById('propertyGrid');
+      propertyGrid.innerHTML = '';
+
+      // Basic properties
+      addPropertySection(propertyGrid, 'Basic Info', {
+        'ID': data.id,
+        'Name': data.name,
+        'Type': data.type,
+        'Visible': data.visible,
+        'Locked': data.locked,
+        'Opacity': data.opacity,
+        'Blend Mode': data.blendMode
+      });
+
+      // Position & Dimensions
+      if (data.position || data.dimensions) {
+        const posData = {};
+        if (data.position) {
+          posData['X'] = Math.round(data.position.x);
+          posData['Y'] = Math.round(data.position.y);
+        }
+        if (data.dimensions) {
+          posData['Width'] = Math.round(data.dimensions.width);
+          posData['Height'] = Math.round(data.dimensions.height);
+        }
+        if (data.rotation) {
+          posData['Rotation'] = `${data.rotation}°`;
+        }
+        addPropertySection(propertyGrid, 'Position & Size', posData);
+      }
+
+      // Auto Layout
+      if (data.autoLayout) {
+        addPropertySection(propertyGrid, 'Auto Layout', {
+          'Mode': data.autoLayout.mode,
+          'Primary Axis': data.autoLayout.primaryAxisSizingMode,
+          'Counter Axis': data.autoLayout.counterAxisSizingMode,
+          'Padding': `${data.autoLayout.paddingTop} ${data.autoLayout.paddingRight} ${data.autoLayout.paddingBottom} ${data.autoLayout.paddingLeft}`,
+          'Item Spacing': data.autoLayout.itemSpacing
+        });
+      }
+
+      // Constraints
+      if (data.constraints) {
+        addPropertySection(propertyGrid, 'Constraints', {
+          'Horizontal': data.constraints.horizontal,
+          'Vertical': data.constraints.vertical
+        });
+      }
+
+      // Fills
+      if (data.fills && data.fills.length > 0) {
+        const fillsData = {};
+        data.fills.forEach((fill, i) => {
+          if (fill.type === 'SOLID') {
+            fillsData[`Fill ${i + 1}`] = fill.color;
+          } else {
+            fillsData[`Fill ${i + 1}`] = fill.type;
+          }
+        });
+        addPropertySection(propertyGrid, 'Fills', fillsData);
+      }
+
+      // Strokes
+      if (data.strokes && data.strokes.length > 0) {
+        const strokesData = {};
+        data.strokes.forEach((stroke, i) => {
+          if (stroke.type === 'SOLID') {
+            strokesData[`Stroke ${i + 1}`] = stroke.color;
+          } else {
+            strokesData[`Stroke ${i + 1}`] = stroke.type;
+          }
+        });
+        if (data.strokeWeight) strokesData['Weight'] = data.strokeWeight;
+        if (data.strokeAlign) strokesData['Align'] = data.strokeAlign;
+        addPropertySection(propertyGrid, 'Strokes', strokesData);
+      }
+
+      // Corner Radius
+      if (data.cornerRadius !== undefined) {
+        addPropertySection(propertyGrid, 'Corner', {
+          'Radius': data.cornerRadius
+        });
+      }
+
+      // Text properties
+      if (data.text) {
+        addPropertySection(propertyGrid, 'Text', {
+          'Content': data.text.characters.substring(0, 100) + (data.text.characters.length > 100 ? '...' : ''),
+          'Font': typeof data.text.fontName === 'object' ? `${data.text.fontName.family} ${data.text.fontName.style}` : data.text.fontName,
+          'Size': data.text.fontSize,
+          'Align H': data.text.textAlignHorizontal,
+          'Align V': data.text.textAlignVertical
+        });
+      }
+
+      // Component properties
+      if (data.component) {
+        addPropertySection(propertyGrid, 'Component', {
+          'Key': data.component.key,
+          'Description': data.component.description || 'None'
+        });
+      }
+
+      // Instance properties
+      if (data.instance) {
+        addPropertySection(propertyGrid, 'Instance', {
+          'Main Component': data.instance.mainComponentName,
+          'Component ID': data.instance.mainComponentId
+        });
+      }
+
+      // Children
+      if (data.childrenCount !== undefined) {
+        addPropertySection(propertyGrid, 'Hierarchy', {
+          'Children': data.childrenCount
+        });
+      }
+    }
+
+    function addPropertySection(container, title, properties) {
+      const section = document.createElement('div');
+      section.className = 'property-section';
+
+      const titleEl = document.createElement('div');
+      titleEl.className = 'property-title';
+      titleEl.textContent = title;
+      section.appendChild(titleEl);
+
+      const group = document.createElement('div');
+      group.className = 'stat-group';
+      group.style.background = 'white';
+      group.style.marginTop = '8px';
+
+      Object.entries(properties).forEach(([key, value]) => {
+        if (value === undefined || value === null) return;
+
+        const row = document.createElement('div');
+        row.className = 'stat-row';
+        row.innerHTML = `
+          <span class="stat-label">${key}</span>
+          <span class="stat-value">${value}</span>
+        `;
+        group.appendChild(row);
+      });
+
+      section.appendChild(group);
+      container.appendChild(section);
     }
   </script>
 </body>

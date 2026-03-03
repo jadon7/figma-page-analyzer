@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Page Analyzer</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 12px;
+      color: #333;
+      background: #fff;
+      padding: 16px;
+    }
+
+    h1 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: #000;
+    }
+
+    h2 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-top: 20px;
+      margin-bottom: 12px;
+      color: #000;
+      border-bottom: 1px solid #e5e5e5;
+      padding-bottom: 6px;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    button {
+      flex: 1;
+      padding: 10px 16px;
+      background: #18a0fb;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background: #0d8ce8;
+    }
+
+    button.secondary {
+      background: #f0f0f0;
+      color: #333;
+    }
+
+    button.secondary:hover {
+      background: #e5e5e5;
+    }
+
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    .stats-container {
+      display: none;
+    }
+
+    .stats-container.visible {
+      display: block;
+    }
+
+    .stat-group {
+      background: #f9f9f9;
+      border: 1px solid #e5e5e5;
+      border-radius: 6px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px solid #e5e5e5;
+    }
+
+    .stat-row:last-child {
+      border-bottom: none;
+    }
+
+    .stat-label {
+      font-weight: 500;
+      color: #666;
+    }
+
+    .stat-value {
+      font-weight: 600;
+      color: #000;
+    }
+
+    .color-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .color-swatch {
+      width: 40px;
+      height: 40px;
+      border-radius: 4px;
+      border: 1px solid #e5e5e5;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .color-swatch:hover::after {
+      content: attr(data-color);
+      position: absolute;
+      bottom: -24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #000;
+      color: #fff;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      white-space: nowrap;
+      z-index: 10;
+    }
+
+    .text-list {
+      max-height: 200px;
+      overflow-y: auto;
+      background: #fff;
+      border: 1px solid #e5e5e5;
+      border-radius: 4px;
+      padding: 8px;
+      margin-top: 8px;
+    }
+
+    .text-item {
+      padding: 4px 0;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 11px;
+      color: #666;
+    }
+
+    .text-item:last-child {
+      border-bottom: none;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #999;
+    }
+
+    .error {
+      background: #fee;
+      border: 1px solid #fcc;
+      color: #c00;
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 12px;
+    }
+
+    .page-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: #18a0fb;
+      margin-bottom: 16px;
+      padding: 8px;
+      background: #f0f8ff;
+      border-radius: 4px;
+    }
+
+    .badge {
+      display: inline-block;
+      background: #18a0fb;
+      color: white;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      margin-left: 8px;
+    }
+
+    .node-type-list {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .node-type-item {
+      background: #fff;
+      padding: 8px;
+      border-radius: 4px;
+      border: 1px solid #e5e5e5;
+    }
+
+    .scrollable {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>📊 Page Analyzer</h1>
+
+  <div class="button-group">
+    <button id="analyzeBtn">Analyze Page</button>
+    <button id="exportBtn" class="secondary" disabled>Export JSON</button>
+  </div>
+
+  <div id="loading" class="loading" style="display: none;">
+    Analyzing page...
+  </div>
+
+  <div id="error" class="error" style="display: none;"></div>
+
+  <div id="statsContainer" class="stats-container">
+    <div id="pageName" class="page-name"></div>
+
+    <h2>📦 Overview</h2>
+    <div class="stat-group">
+      <div class="stat-row">
+        <span class="stat-label">Total Nodes</span>
+        <span class="stat-value" id="totalNodes">0</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Max Hierarchy Depth</span>
+        <span class="stat-value" id="maxDepth">0</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Avg Hierarchy Depth</span>
+        <span class="stat-value" id="avgDepth">0</span>
+      </div>
+    </div>
+
+    <h2>🧩 Nodes by Type</h2>
+    <div class="stat-group scrollable">
+      <div id="nodeTypes" class="node-type-list"></div>
+    </div>
+
+    <h2>⚛️ Components</h2>
+    <div class="stat-group">
+      <div class="stat-row">
+        <span class="stat-label">Components</span>
+        <span class="stat-value" id="components">0</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Component Sets</span>
+        <span class="stat-value" id="componentSets">0</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Instances</span>
+        <span class="stat-value" id="instances">0</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Unique Components</span>
+        <span class="stat-value" id="uniqueComponents">0</span>
+      </div>
+    </div>
+
+    <h2>🎨 Colors <span class="badge" id="colorCount">0</span></h2>
+    <div class="stat-group">
+      <div id="colorGrid" class="color-grid"></div>
+    </div>
+
+    <h2>✏️ Text</h2>
+    <div class="stat-group">
+      <div class="stat-row">
+        <span class="stat-label">Text Nodes</span>
+        <span class="stat-value" id="textNodes">0</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Total Characters</span>
+        <span class="stat-value" id="totalChars">0</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Unique Fonts</span>
+        <span class="stat-value" id="uniqueFonts">0</span>
+      </div>
+    </div>
+
+    <h2>🎭 Styles</h2>
+    <div class="stat-group">
+      <div class="stat-row">
+        <span class="stat-label">Text Styles</span>
+        <span class="stat-value" id="textStyles">0</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Fill Styles</span>
+        <span class="stat-value" id="fillStyles">0</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Stroke Styles</span>
+        <span class="stat-value" id="strokeStyles">0</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Effect Styles</span>
+        <span class="stat-value" id="effectStyles">0</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Total Styles</span>
+        <span class="stat-value" id="totalStyles">0</span>
+      </div>
+    </div>
+
+    <h2>📐 Dimensions</h2>
+    <div class="stat-group">
+      <div class="stat-row">
+        <span class="stat-label">Largest Node</span>
+        <span class="stat-value" id="largestNode">-</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let analysisData = null;
+
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const exportBtn = document.getElementById('exportBtn');
+    const loading = document.getElementById('loading');
+    const error = document.getElementById('error');
+    const statsContainer = document.getElementById('statsContainer');
+
+    analyzeBtn.onclick = () => {
+      parent.postMessage({ pluginMessage: { type: 'analyze' } }, '*');
+      loading.style.display = 'block';
+      error.style.display = 'none';
+      statsContainer.classList.remove('visible');
+      exportBtn.disabled = true;
+    };
+
+    exportBtn.onclick = () => {
+      if (analysisData) {
+        const dataStr = JSON.stringify(analysisData, null, 2);
+        const blob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${analysisData.pageName || 'page'}-analysis.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    };
+
+    window.onmessage = (event) => {
+      const msg = event.data.pluginMessage;
+
+      if (msg.type === 'analysis-complete') {
+        loading.style.display = 'none';
+        statsContainer.classList.add('visible');
+        exportBtn.disabled = false;
+        analysisData = msg.data;
+        displayResults(msg.data);
+      } else if (msg.type === 'error') {
+        loading.style.display = 'none';
+        error.style.display = 'block';
+        error.textContent = msg.message;
+      }
+    };
+
+    function displayResults(data) {
+      document.getElementById('pageName').textContent = `Page: ${data.pageName}`;
+      document.getElementById('totalNodes').textContent = data.totalNodes.toLocaleString();
+      document.getElementById('maxDepth').textContent = data.hierarchy.maxDepth;
+      document.getElementById('avgDepth').textContent = data.hierarchy.avgDepth;
+
+      // Node types
+      const nodeTypesContainer = document.getElementById('nodeTypes');
+      nodeTypesContainer.innerHTML = '';
+      Object.entries(data.nodesByType)
+        .sort((a, b) => b[1] - a[1])
+        .forEach(([type, count]) => {
+          const item = document.createElement('div');
+          item.className = 'node-type-item';
+          item.innerHTML = `
+            <div style="font-size: 10px; color: #999;">${type}</div>
+            <div style="font-size: 16px; font-weight: 600;">${count}</div>
+          `;
+          nodeTypesContainer.appendChild(item);
+        });
+
+      // Components
+      document.getElementById('components').textContent = data.components.total;
+      document.getElementById('componentSets').textContent = data.components.componentSets;
+      document.getElementById('instances').textContent = data.components.instances;
+      document.getElementById('uniqueComponents').textContent = data.components.uniqueComponents;
+
+      // Colors
+      document.getElementById('colorCount').textContent = data.colors.total;
+      const colorGrid = document.getElementById('colorGrid');
+      colorGrid.innerHTML = '';
+      data.colors.allColors.slice(0, 50).forEach(color => {
+        const swatch = document.createElement('div');
+        swatch.className = 'color-swatch';
+        swatch.style.background = color;
+        swatch.setAttribute('data-color', color);
+        swatch.onclick = () => {
+          navigator.clipboard.writeText(color);
+        };
+        colorGrid.appendChild(swatch);
+      });
+
+      // Text
+      document.getElementById('textNodes').textContent = data.text.totalTextNodes;
+      document.getElementById('totalChars').textContent = data.text.totalCharacters.toLocaleString();
+      document.getElementById('uniqueFonts').textContent = data.text.uniqueFonts.length;
+
+      // Styles
+      document.getElementById('textStyles').textContent = data.styles.textStyles;
+      document.getElementById('fillStyles').textContent = data.styles.fillStyles;
+      document.getElementById('strokeStyles').textContent = data.styles.strokeStyles;
+      document.getElementById('effectStyles').textContent = data.styles.effectStyles;
+      document.getElementById('totalStyles').textContent = data.styles.total;
+
+      // Dimensions
+      if (data.dimensions.largestNode) {
+        const node = data.dimensions.largestNode;
+        document.getElementById('largestNode').textContent =
+          `${node.name} (${Math.round(node.width)}×${Math.round(node.height)})`;
+      }
+    }
+  </script>
+</body>
+</html>

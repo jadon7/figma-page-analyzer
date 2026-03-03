@@ -1,49 +1,16 @@
 // Figma Page Analyzer Plugin
 // Analyzes all nodes and provides comprehensive statistics
 
-interface NodeStats {
-  totalNodes: number;
-  nodesByType: Record<string, number>;
-  components: {
-    total: number;
-    instances: number;
-    componentSets: number;
-    uniqueComponents: Set<string>;
-  };
-  colors: {
-    fills: Set<string>;
-    strokes: Set<string>;
-    total: number;
-  };
-  text: {
-    totalTextNodes: number;
-    totalCharacters: number;
-    uniqueFonts: Set<string>;
-    textContents: string[];
-  };
-  styles: {
-    textStyles: Set<string>;
-    fillStyles: Set<string>;
-    strokeStyles: Set<string>;
-    effectStyles: Set<string>;
-  };
-  hierarchy: {
-    maxDepth: number;
-    avgDepth: number;
-    depthDistribution: Record<number, number>;
-  };
-  dimensions: {
-    totalWidth: number;
-    totalHeight: number;
-    largestNode: { name: string; width: number; height: number } | null;
-  };
-}
-
-// Show UI
-figma.showUI(__html__, { width: 500, height: 600 });
+import {
+  NodeStats,
+  SerializedPaint,
+  SerializedEffect,
+  InspectedNodeData,
+  DEFAULT_ANALYSIS_OPTIONS
+} from './types';
 
 // Helper function to convert color to hex
-function colorToHex(color: RGB | RGBA): string {
+export function colorToHex(color: RGB | RGBA): string {
   const r = Math.round(color.r * 255);
   const g = Math.round(color.g * 255);
   const b = Math.round(color.b * 255);
@@ -56,7 +23,7 @@ function colorToHex(color: RGB | RGBA): string {
 }
 
 // Extract colors from paint
-function extractColors(paints: readonly Paint[] | typeof figma.mixed, colorSet: Set<string>): void {
+export function extractColors(paints: readonly Paint[] | typeof figma.mixed, colorSet: Set<string>): void {
   if (paints === figma.mixed || !paints) return;
 
   paints.forEach(paint => {
@@ -70,8 +37,281 @@ function extractColors(paints: readonly Paint[] | typeof figma.mixed, colorSet: 
   });
 }
 
+// Serialize paint array for JSON
+function serializePaints(paints: readonly Paint[] | typeof figma.mixed): SerializedPaint[] | string {
+  if (paints === figma.mixed) return 'mixed';
+  if (!paints) return [];
+
+  return paints.map(paint => {
+    if (paint.type === 'SOLID') {
+      return {
+        type: paint.type,
+        color: colorToHex(paint.color),
+        opacity: paint.opacity,
+        visible: paint.visible
+      };
+    } else if (paint.type === 'GRADIENT_LINEAR' || paint.type === 'GRADIENT_RADIAL' ||
+               paint.type === 'GRADIENT_ANGULAR' || paint.type === 'GRADIENT_DIAMOND') {
+      return {
+        type: paint.type,
+        gradientStops: paint.gradientStops?.map(stop => ({
+          color: colorToHex(stop.color),
+          position: stop.position
+        })),
+        opacity: paint.opacity,
+        visible: paint.visible
+      };
+    } else if (paint.type === 'IMAGE') {
+      return {
+        type: paint.type,
+        scaleMode: paint.scaleMode,
+        opacity: paint.opacity,
+        visible: paint.visible
+      };
+    }
+    return { type: paint.type };
+  });
+}
+
+// Serialize effects for JSON
+function serializeEffects(effects: readonly Effect[]): SerializedEffect[] {
+  return effects.map(effect => ({
+    type: effect.type,
+    visible: effect.visible,
+    radius: 'radius' in effect ? effect.radius : undefined,
+    color: 'color' in effect ? colorToHex(effect.color) : undefined,
+    offset: 'offset' in effect ? effect.offset : undefined,
+    spread: 'spread' in effect ? effect.spread : undefined,
+    blendMode: 'blendMode' in effect ? effect.blendMode : undefined
+  }));
+}
+
+// Extract detailed properties from selected node with error handling
+export function inspectSelectedNode(node: SceneNode): InspectedNodeData {
+  const errors: string[] = [];
+
+  try {
+    const baseProps: InspectedNodeData = {
+      id: node.id,
+      name: node.name,
+      type: node.type,
+      visible: node.visible,
+      locked: node.locked
+    };
+
+    // Opacity and blend mode
+    try {
+      if ('opacity' in node) baseProps.opacity = node.opacity;
+      if ('blendMode' in node) baseProps.blendMode = node.blendMode;
+    } catch (e) {
+      errors.push('Failed to read opacity/blendMode');
+    }
+
+    // Position and dimensions
+    try {
+      if ('x' in node && 'y' in node) {
+        baseProps.position = { x: node.x, y: node.y };
+      }
+    } catch (e) {
+      baseProps.position = { error: 'Unable to read position' };
+      errors.push('Failed to read position');
+    }
+
+    try {
+      if ('width' in node && 'height' in node) {
+        baseProps.dimensions = { width: node.width, height: node.height };
+      }
+    } catch (e) {
+      baseProps.dimensions = { error: 'Unable to read dimensions' };
+      errors.push('Failed to read dimensions');
+    }
+
+    try {
+      if ('rotation' in node) {
+        baseProps.rotation = node.rotation;
+      }
+    } catch (e) {
+      errors.push('Failed to read rotation');
+    }
+
+    // Layout properties
+    try {
+      if ('layoutMode' in node && node.layoutMode !== 'NONE') {
+        baseProps.autoLayout = {
+          mode: node.layoutMode,
+          primaryAxisSizingMode: node.primaryAxisSizingMode,
+          counterAxisSizingMode: node.counterAxisSizingMode,
+          primaryAxisAlignItems: node.primaryAxisAlignItems,
+          counterAxisAlignItems: node.counterAxisAlignItems,
+          paddingLeft: node.paddingLeft,
+          paddingRight: node.paddingRight,
+          paddingTop: node.paddingTop,
+          paddingBottom: node.paddingBottom,
+          itemSpacing: node.itemSpacing
+        };
+      }
+    } catch (e) {
+      baseProps.autoLayout = { error: 'Unable to read auto layout' };
+      errors.push('Failed to read auto layout');
+    }
+
+    // Constraints
+    try {
+      if ('constraints' in node) {
+        baseProps.constraints = node.constraints;
+      }
+    } catch (e) {
+      baseProps.constraints = { error: 'Unable to read constraints' };
+      errors.push('Failed to read constraints');
+    }
+
+    // Fills and strokes
+    try {
+      if ('fills' in node) {
+        baseProps.fills = serializePaints(node.fills);
+      }
+    } catch (e) {
+      baseProps.fills = { error: 'Unable to read fills' };
+      errors.push('Failed to read fills');
+    }
+
+    try {
+      if ('strokes' in node) {
+        baseProps.strokes = serializePaints(node.strokes);
+        baseProps.strokeWeight = 'strokeWeight' in node ? node.strokeWeight : undefined;
+        baseProps.strokeAlign = 'strokeAlign' in node ? node.strokeAlign : undefined;
+      }
+    } catch (e) {
+      baseProps.strokes = { error: 'Unable to read strokes' };
+      errors.push('Failed to read strokes');
+    }
+
+    // Effects
+    try {
+      if ('effects' in node) {
+        baseProps.effects = serializeEffects(node.effects);
+      }
+    } catch (e) {
+      baseProps.effects = { error: 'Unable to read effects' };
+      errors.push('Failed to read effects');
+    }
+
+    // Corner radius
+    try {
+      if ('cornerRadius' in node && typeof node.cornerRadius === 'number') {
+        baseProps.cornerRadius = node.cornerRadius;
+      }
+    } catch (e) {
+      errors.push('Failed to read corner radius');
+    }
+
+    // Text-specific properties
+    try {
+      if (node.type === 'TEXT') {
+        baseProps.text = {
+          characters: node.characters,
+          fontSize: node.fontSize,
+          fontName: node.fontName !== figma.mixed ? node.fontName : 'mixed',
+          textAlignHorizontal: node.textAlignHorizontal,
+          textAlignVertical: node.textAlignVertical,
+          letterSpacing: node.letterSpacing,
+          lineHeight: node.lineHeight,
+          textCase: node.textCase,
+          textDecoration: node.textDecoration
+        };
+      }
+    } catch (e) {
+      baseProps.text = { error: 'Unable to read text properties' };
+      errors.push('Failed to read text properties');
+    }
+
+    // Component/Instance properties
+    try {
+      if (node.type === 'COMPONENT') {
+        baseProps.component = {
+          key: node.key,
+          description: node.description
+        };
+      }
+    } catch (e) {
+      baseProps.component = { error: 'Unable to read component properties' };
+      errors.push('Failed to read component properties');
+    }
+
+    try {
+      if (node.type === 'INSTANCE') {
+        baseProps.instance = {
+          mainComponentId: node.mainComponent?.id,
+          mainComponentName: node.mainComponent?.name,
+          componentProperties: node.componentProperties
+        };
+      }
+    } catch (e) {
+      baseProps.instance = { error: 'Unable to read instance properties' };
+      errors.push('Failed to read instance properties');
+    }
+
+    // Vector properties
+    try {
+      if (node.type === 'VECTOR' || node.type === 'STAR' || node.type === 'POLYGON') {
+        baseProps.vector = {
+          vectorPaths: 'vectorPaths' in node ? node.vectorPaths.length : 0,
+          vectorNetwork: 'vectorNetwork' in node ? {
+            vertices: node.vectorNetwork.vertices.length,
+            segments: node.vectorNetwork.segments.length
+          } : undefined
+        };
+      }
+    } catch (e) {
+      baseProps.vector = { error: 'Unable to read vector properties' };
+      errors.push('Failed to read vector properties');
+    }
+
+    // Export settings
+    try {
+      if ('exportSettings' in node) {
+        baseProps.exportSettings = node.exportSettings;
+      }
+    } catch (e) {
+      errors.push('Failed to read export settings');
+    }
+
+    // Children count
+    try {
+      if ('children' in node) {
+        baseProps.childrenCount = node.children.length;
+      }
+    } catch (e) {
+      errors.push('Failed to read children count');
+    }
+
+    // Add errors array if any errors occurred
+    if (errors.length > 0) {
+      baseProps.errors = errors;
+    }
+
+    return baseProps;
+  } catch (error) {
+    // Catastrophic failure - return minimal data with safe property access
+    let safeId = 'unknown';
+    let safeName = 'unknown';
+    let safeType = 'unknown';
+
+    try { safeId = node.id; } catch (e) { /* ignore */ }
+    try { safeName = node.name; } catch (e) { /* ignore */ }
+    try { safeType = node.type; } catch (e) { /* ignore */ }
+
+    return {
+      id: safeId,
+      name: safeName,
+      type: safeType,
+      errors: ['Critical error inspecting node: ' + (error instanceof Error ? error.message : 'Unknown error')]
+    };
+  }
+}
+
 // Traverse node tree and collect statistics
-function analyzeNode(node: SceneNode, stats: NodeStats, depth: number = 0): void {
+export function analyzeNode(node: SceneNode, stats: NodeStats, depth: number = 0): void {
   stats.totalNodes++;
 
   // Update node type count
@@ -94,11 +334,19 @@ function analyzeNode(node: SceneNode, stats: NodeStats, depth: number = 0): void
     stats.components.componentSets++;
   }
 
-  // Text analysis
+  // Text analysis with memory limits
   if (node.type === 'TEXT') {
     stats.text.totalTextNodes++;
     stats.text.totalCharacters += node.characters.length;
-    stats.text.textContents.push(node.characters);
+
+    // Only store first 100 text samples to prevent memory overflow
+    if (stats.text.textContents.length < DEFAULT_ANALYSIS_OPTIONS.maxTextSamples) {
+      // Truncate long text to 200 characters
+      const truncated = node.characters.length > DEFAULT_ANALYSIS_OPTIONS.maxTextLength
+        ? node.characters.substring(0, DEFAULT_ANALYSIS_OPTIONS.maxTextLength) + '...'
+        : node.characters;
+      stats.text.textContents.push(truncated);
+    }
 
     // Font analysis
     const fontName = node.fontName;
@@ -152,7 +400,7 @@ function analyzeNode(node: SceneNode, stats: NodeStats, depth: number = 0): void
 }
 
 // Main analysis function
-function analyzePage(): void {
+export function analyzePage(): void {
   try {
     const currentPage = figma.currentPage;
 
@@ -270,11 +518,70 @@ function analyzePage(): void {
   }
 }
 
-// Handle messages from UI
-figma.ui.onmessage = (msg) => {
-  if (msg.type === 'analyze') {
-    analyzePage();
-  } else if (msg.type === 'close') {
-    figma.closePlugin();
+// Send selected node info to UI
+function sendSelectionUpdate(): void {
+  const selection = figma.currentPage.selection;
+
+  if (selection.length === 0) {
+    figma.ui.postMessage({
+      type: 'selection-update',
+      data: null
+    });
+    return;
   }
-};
+
+  if (selection.length === 1) {
+    const inspectedNode = inspectSelectedNode(selection[0]);
+    figma.ui.postMessage({
+      type: 'selection-update',
+      data: inspectedNode
+    });
+  } else {
+    // Multiple selection
+    figma.ui.postMessage({
+      type: 'selection-update',
+      data: {
+        type: 'MULTIPLE_SELECTION',
+        count: selection.length,
+        nodes: selection.map(node => ({
+          id: node.id,
+          name: node.name,
+          type: node.type
+        }))
+      }
+    });
+  }
+}
+
+// Initialize plugin (only runs in Figma environment)
+export function initPlugin(): void {
+  if (typeof figma !== 'undefined') {
+    // Show UI
+    figma.showUI(__html__, { width: 600, height: 700 });
+
+    // Listen for selection changes
+    const selectionHandler = () => {
+      sendSelectionUpdate();
+    };
+    figma.on('selectionchange', selectionHandler);
+
+    // Send initial selection state
+    sendSelectionUpdate();
+
+    // Handle messages from UI
+    figma.ui.onmessage = (msg) => {
+      if (msg.type === 'analyze') {
+        analyzePage();
+      } else if (msg.type === 'close') {
+        // Clean up selection listener before closing
+        figma.off('selectionchange', selectionHandler);
+        figma.closePlugin();
+      }
+    };
+  }
+}
+
+// Auto-initialize if in Figma environment
+if (typeof figma !== 'undefined') {
+  initPlugin();
+}
