@@ -1,0 +1,17 @@
+{
+  "name": "figma-page-analyzer",
+  "version": "1.0.0",
+  "description": "Analyze and statistics all information on the current Figma page",
+  "main": "code.js",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch"
+  },
+  "keywords": ["figma", "plugin", "analyzer", "statistics"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@figma/plugin-typings": "^1.90.0",
+    "typescript": "^5.3.3"
+  }
+}
